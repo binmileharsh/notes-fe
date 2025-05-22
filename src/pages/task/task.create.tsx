@@ -1,193 +1,223 @@
-import React, { useState } from 'react';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+import { Dispatch, SetStateAction } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+const taskSchema = z.object({
+ 
+  description: z.string().min(1, "Description is required"),
+  status: z.enum(["done", "pending", "in-progress", "in-review"], {
+    required_error: "Status is required",
+  }),
+  priority: z.enum(["low", "medium", "high", "urgent"], {
+    required_error: "Priority is required",
+  }),
+  badge: z.string().optional(),
+});
 
-function TaskCreatePage() {
-  // State to store form data
-  const [formData, setFormData] = useState({
-    taskId: '',
-    description: '',
-    status: '',
-    priority: ''
+type TaskFormValues = z.infer<typeof taskSchema>;
+import { Task } from "./task.types";
+
+
+interface TaskCreateFormType {
+  open: boolean;
+  setOpen: Dispatch<SetStateAction<boolean>>;
+  tasks: Task[];
+  setTasks: Dispatch<SetStateAction<Task[]>>;
+  page: number;
+  limit: number;
+  setPage: Dispatch<SetStateAction<number>>;
+  setLimit: Dispatch<SetStateAction<number>>;
+}
+
+function TaskCreateForm({
+  setTasks,
+  setOpen,
+  page,
+  // open,
+  limit,
+  // setLimit,
+  // tasks
+}: TaskCreateFormType) {
+  const form = useForm<TaskFormValues>({
+    resolver: zodResolver(taskSchema),
+    defaultValues: {
+      description: "",
+      status: "pending",
+     
+      priority: "low", 
+      badge:"",
+    },
+    
   });
-
-  // Update the form data whenever the user types
-  const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,                    // Keep existing form data
-      [e.target.name]: e.target.value // Update the specific field
-    });
-  };
-
-  // Handle the form submission
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();  // Prevents page refresh
-    console.log("Form data submitted:", formData);
-    if(formData.description=="" ||formData.priority==""||formData.status=="") {
-      toast.error("description dede bhai")
-      return
-    }
-    if(formData.taskId ==''){
-
-      toast.error("id likh pehle")
-      return
-    }
-
+  async function getAllItems() {
     try {
-      const response = await fetch('http://localhost:3000/tasks/add', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData) // Send the form data as JSON
+      const response = await fetch(
+        `http://localhost:3000/tasks/all?page=${page}&limit=${limit}`
+      );
+      const data = await response.json();
+      console.log(data)
+      console.log("All items:", data);
+      setTasks(data.data)
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  }
+
+  const onSubmit = async (data: TaskFormValues) => {
+    try {
+      const response = await fetch("http://localhost:3000/tasks/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
       });
 
       if (response.ok) {
-        const data = await response.json();
-        console.log("Task created successfully:", data);
-        toast.success("Form submitted successfully!");
+        toast.success("Task created!");
+        getAllItems()
+      
+        setOpen(false);
+        form.reset();
 
-        // Reset form after successful submission
-        setFormData({
-          taskId: '',
-          description: '',
-          status: '',
-          priority: ''
-        });
+       
+
+        
       } else {
-        console.error("Error creating task:", response.statusText);
+        toast.error("Failed to create task.");
       }
-    } catch (error) {
-      console.error("Network error:", error);
+    } catch (err) {
+      console.error(err);
+      toast.error("Something went wrong.");
     }
   };
 
   return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      
 
-    <Card className="w-full h-full ">
-  <CardHeader  className='  text-3xl'>
-  <h1 className="text-4xl font-bold text-gray-800 mb-8">
-        Welcome to Task Management System
-      </h1>
-  </CardHeader>
-  <CardContent>
-  <div className="p-6 w-full h-full bg-white rounded-lg shadow-lg">
-      <h2 className="text-2xl font-semibold t mb-6 text-black">Task Form</h2>
-      <form  className=" text-black" onSubmit={handleSubmit}>
-        {/* Task ID Input */}
-        <div className="mb-4">
-          <label htmlFor="taskId" className="block text-sm font-medium text-gray-700">Task ID</label>
-          <input
-            id="taskId"
-            name="taskId"
-            type="text"
-            value={formData.taskId}
-            onChange={handleChange}
-            placeholder="Enter Task ID"
-            className="mt-1 block w-full px-4 py-2 border text-black border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
+      <FormField
+  control={form.control}
+  name="description"
+  render={({ field }) => (
+    <FormItem>
+      <FormLabel>Description</FormLabel>
+      <FormControl>
+        <textarea placeholder="Enter Description" {...field} />
+      </FormControl>
+      <FormMessage />
+    </FormItem>
+  )}
+/>
 
-        {/* Description Input */}
-        <div className="mb-4">
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700">Description</label>
-          <input
-            id="description"
-            name="description"
-            type="text"
-            value={formData.description}
-            onChange={handleChange}
-            placeholder="Enter Description"
-            className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
 
-        {/* Status Input (Text Field) */}
-        <div className="mb-4">
-          <label htmlFor="status" className="block text-sm font-medium text-gray-700">Status</label>
-          <input
-            id="status"
-            name="status"
-            type="text"
-            value={formData.status}
-            onChange={handleChange}
-            placeholder="Enter Status (e.g. In Progress)"
-            className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
+        <FormField
+          control={form.control}
+          name="status"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Status</FormLabel>
+              <FormControl>
+                <Select
+                  {...field}
+                  onValueChange={field.onChange}
+                  value={field.value}
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger className="w-[470px]">
+                      <SelectValue placeholder="Select a STATUS" />
+                    </SelectTrigger>
+                  </FormControl>
 
-        {/* Priority Input (Text Field) */}
-        <div className="mb-6">
-          <label htmlFor="priority" className="block text-sm font-medium text-gray-700">Priority</label>
-          <input
-            id="priority"
-            name="priority"
-            type="text"
-            value={formData.priority}
-            onChange={handleChange}
-            placeholder="Enter Priority (e.g. High, Medium, Low)"
-            className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>STATUS</SelectLabel>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="in-progress">Inprogress</SelectItem>
+                      <SelectItem value="in-review">in-review</SelectItem>
+                      <SelectItem value="done">Done</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-        {/* Submit Button */}
-        <div>
-          <button 
-            type="submit" 
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          >
-            Submit
-          </button>
-        </div>
+        <FormField
+          control={form.control}
+          name="priority"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Priority</FormLabel>
+              <Select
+                onValueChange={field.onChange}
+                value={field.value}
+                defaultValue={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger className="w-[470px]">
+                    <SelectValue placeholder="Select a PRIORITY" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>PRIORITY</SelectLabel>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="urgent">Urgent</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="badge"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Badge</FormLabel>
+              <FormControl>
+                <Input placeholder="Badge" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <Button type="submit" className="w-full">
+          Submit
+        </Button>
       </form>
-    </div>
-    
-  </CardContent>
-  <CardFooter>
-    <p>Card Footer</p>
-  </CardFooter>
-</Card>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-   
+    </Form>
   );
 }
 
-export default TaskCreatePage;
+export default TaskCreateForm;

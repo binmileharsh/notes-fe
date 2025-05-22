@@ -1,5 +1,5 @@
 import "./index.css";
 import { createRoot } from "react-dom/client";
-import ListOfTask from "./App.tsx";
+import App from "./App.tsx";
 
-createRoot(document.getElementById("root")!).render(<ListOfTask />);
+createRoot(document.getElementById("root")!).render(<App />);
