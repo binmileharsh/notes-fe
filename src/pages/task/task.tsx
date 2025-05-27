@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import TableStructure from "./table.list";
 // import { AppSidebar } from "@/components/app-sidebar";
 
@@ -15,9 +15,14 @@ import { Task } from "./task.types";
 import { TaskDeletes } from "./task.delete";
 import { TaskEdit } from "./list/task.edit";
 import Taskview from "./list/task.view";
+import { useAuth } from "@/context/authcontext";
 // import { ThemeToggleButton } from "@/themetoggle";
 
 function TaskPage() {
+  const{setUserid}=useAuth()
+
+ const{userid}=useAuth();
+ 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(8);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -26,10 +31,10 @@ function TaskPage() {
   const [openCreateModal, setOpenCreateModal] = useState<boolean>(false);
   const [openEditModal, setOpenEditModal] = useState<boolean>(false);
   const [openViewModal, setOpenViewModal] = useState<boolean>(false); 
-  // const[logout,setLogout]=useState<boolean>(false);
+ 
   const fetchData = async () => {
     const response = await fetch(
-      `http://localhost:3000/tasks/all?page=${page}&limit=${limit}`
+      `http://localhost:3000/tasks/all?page=${page}&limit=${limit}&userid=${userid}`,
     );
     const data = await response.json();
     console.log("data", data);
@@ -38,8 +43,9 @@ function TaskPage() {
   };
 
   useEffect(() => {
+    
     fetchData();
-  }, [page, limit]);
+  }, [page, limit,userid]);
 
   return (
     <Card className="w-full h-full shadow-none">

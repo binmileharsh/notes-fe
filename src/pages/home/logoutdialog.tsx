@@ -11,7 +11,7 @@ export default function LogoutDialog({ setLogout }: logoutinterface) {
 
   const handleLogout = () => {
     localStorage.clear();
-    navigate("/");
+    navigate("/signin");
   };
  
     const handleLogoutCancel = () => {          

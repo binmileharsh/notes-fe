@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from 'react-router-dom';
 import {
   Card,
   CardHeader,
@@ -36,6 +37,7 @@ const userSchema = z
 type FormData = z.infer<typeof userSchema>;
 
 export default function Registered() {
+  const navigate = useNavigate();
   const form = useForm<FormData>({
     resolver: zodResolver(userSchema),
     defaultValues: {
@@ -64,6 +66,7 @@ export default function Registered() {
       }
 
       toast.success("User created successfully");
+      navigate("/signin");
       setMessage("User created successfully.");
       reset();
     } catch (err: any) {

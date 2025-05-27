@@ -1,12 +1,13 @@
 import { useEffect} from "react";
 import { useLocation } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { useAuth } from "@/context/authcontext";
 // import { LogOut } from "lucide-react";
 // import { Link } from "react-router-dom";  
 // import Logout from "./logout";
 export default function Dashboard() {
-  
- 
+  const { user } = useAuth();
+
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const email = searchParams.get("email");
@@ -58,7 +59,7 @@ export default function Dashboard() {
         <CardTitle>User Email</CardTitle>
       </CardHeader>
       <CardContent>
-        <p>{email}sugamsharma2002@gmail.com</p>
+        <p>{user}</p>
       </CardContent>
     </Card>
 

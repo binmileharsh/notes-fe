@@ -22,6 +22,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { useState } from "react";
 import { ThemeToggleButton } from "@/themetoggle";
+import { useAuth } from "@/context/authcontext";
+import { verify } from "crypto";
 
 const userSchema = z.object({
   email: z.string().email("Invalid email address").min(1, "Email is required"),
@@ -31,6 +33,9 @@ const userSchema = z.object({
 type FormData = z.infer<typeof userSchema>;
 
 export default function SignIn() {
+  const { setUser } = useAuth();
+  const { setUserid } = useAuth();
+
   const [emialfordashboard,setemailfordashboard]=useState("")
     const navigate = useNavigate();
   const form = useForm<FormData>({
@@ -60,10 +65,68 @@ export default function SignIn() {
         throw new Error(errorData.message || "Something went wrong");
       }
 
+
+
+      
+        const response=await res.json();
+        
+        const token = response.access_token; 
+        const email= response.email;
+        const verifyUserByEmail = async (email: string) => {
+          const res = await fetch(`http://localhost:3000/users/verify?email=${email}`);
+          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+          return await res.json();
+        };
+        const newdata= await verifyUserByEmail(email)
+        newdata.userid=newdata.id
+        console.log("User data from veruify endpoint:", newdata.id);
+        setUserid(newdata.id);
+      
+
+
+
+
+        
+        localStorage.setItem("token", token);
+
+
+
+        
+        
+    
+        console.log("Token stored successfully");
       setMessage("Signed in successfully!");
       toast("Signed in successfully!");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
       console.log("Signed in successfully!");
       console.log(emialfordashboard)
+      setUser(data.email);
       
       navigate(`/dashboard?email=${data.email}`, {
         
@@ -71,7 +134,8 @@ export default function SignIn() {
       
 
       reset();
-    } catch (err:string | any) {
+    }
+    catch (err: string | any) {
       console.error(err);
       toast.error("Sign in failed: " + err.message);
       setMessage("Sign in failed: " + err.message);

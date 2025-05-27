@@ -8,7 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { Dispatch, SetStateAction } from "react";
+import { Dispatch, SetStateAction, use, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -35,10 +35,12 @@ const taskSchema = z.object({
     required_error: "Priority is required",
   }),
   badge: z.string().optional(),
+  userId: z.number().int(),
 });
 
 type TaskFormValues = z.infer<typeof taskSchema>;
 import { Task } from "./task.types";
+import { useAuth } from "@/context/authcontext";
 
 
 interface TaskCreateFormType {
@@ -61,6 +63,31 @@ function TaskCreateForm({
   // setLimit,
   // tasks
 }: TaskCreateFormType) {
+  const{user}=useAuth()
+    const{setUserid}=useAuth()
+    const{userid}=useAuth()
+
+  useEffect(() => {
+   
+    const fetchUser = async () => {
+      try {
+        const response = await fetch(`http://localhost:3000/users/verify?email=${user}`);
+        const data = await response.json();
+        console.log("User data from verify endpoint:", data);
+        const userid=data.id
+        setUserid(userid)
+        console.log(data.id)
+        
+      } catch (error) {
+        console.error("Error fetching user:", error);
+      }
+    };
+  
+    if (user) {
+      fetchUser();
+    }
+  }, [user]);
+  
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskSchema),
     defaultValues: {
@@ -69,13 +96,15 @@ function TaskCreateForm({
      
       priority: "low", 
       badge:"",
+      userId:0
     },
     
   });
+  const token = localStorage.getItem("token");
   async function getAllItems() {
     try {
       const response = await fetch(
-        `http://localhost:3000/tasks/all?page=${page}&limit=${limit}`
+        `http://localhost:3000/tasks/all?page=${page}&limit=${limit}&userid=${userid}`,
       );
       const data = await response.json();
       console.log(data)
@@ -87,10 +116,14 @@ function TaskCreateForm({
   }
 
   const onSubmit = async (data: TaskFormValues) => {
+    data.userId = parseInt(userid); 
+    
     try {
       const response = await fetch("http://localhost:3000/tasks/add", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`  
+         },
         body: JSON.stringify(data),
       });
 
